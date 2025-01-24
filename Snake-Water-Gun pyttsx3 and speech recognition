@@ -2,132 +2,96 @@ import pyttsx3
 import speech_recognition as sr
 import random
 
+# Initialize text-to-speech engine
 engine = pyttsx3.init('sapi5')
-voice_s = engine.getProperty('voices')
-engine.setProperty('voice', voice_s[0].id)
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[0].id)
 
 def speak(text):
+    """Speak the provided text."""
     engine.say(text)
     engine.runAndWait()
 
-def Takecommand():
-    r = sr.Recognizer()
-
+def take_command():
+    """Listen to the user's voice command and return the recognized text."""
     r = sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
         r.pause_threshold = 1
-        audio = r.listen(source)
-
-    try:
-        print("Recognizing...")
-        # Using google for voice recognition.
-        query = r.recognize_google(audio, language='en-in')
-        print(f"User said: {query}\n")  # User query will be printed.
-
-    except Exception as e:
-        # print(e)
-        # Say that again will be printed in case of improper voice
-        print("Say that again please...")
-        speak("Please tell the name!")
-        exit()
-        # return "None"  # None string will be returned
-    return query
+        try:
+            audio = r.listen(source, timeout=5, phrase_time_limit=5)
+            print("Recognizing...")
+            query = r.recognize_google(audio, language='en-in')
+            print(f"User said: {query}")
+            return query.lower()
+        except sr.UnknownValueError:
+            print("Didn't catch that. Please try again.")
+            speak("I didn't understand that. Please try again.")
+            return None
+        except sr.RequestError:
+            print("Speech recognition service is unavailable.")
+            speak("Sorry, the speech recognition service is unavailable.")
+            return None
+        except Exception as e:
+            print(f"Error: {e}")
+            speak("Something went wrong. Please try again.")
+            return None
 
 if __name__ == "__main__":
-    speak("Welcome to Snake, Water, Gun Game")
-    speak("Iam playing game with you my name is Jarvis!")
-    speak("Please tell me what's your name!")
+    speak("Welcome to the Snake, Water, Gun Game!")
+    speak("I am Jarvis, and I will play against you.")
+    speak("Please tell me your name.")
 
-    Name = Takecommand().lower()
-    speak(f"Ok {Name} Now starting the game!")
-    
-    game_list = ["python","water","ak 47"]
-    Jarvis_p = 0
-    User_p = 0
-    chances = 1
+    name = None
+    while not name:
+        name = take_command()
+        if not name:
+            speak("I didn't catch your name. Please say it again.")
 
-    while chances < 6:
-        Jarvis = random.choice(game_list)
-        game_inp = Takecommand().lower()
+    speak(f"Hello {name}, let's start the game!")
+    choices = ["python", "water", "ak 47"]
+    user_score = 0
+    jarvis_score = 0
+    total_chances = 5
 
-        if game_inp == "python" and Jarvis == "ak 47":
-            Jarvis_p += 1
-            speak("You loose!")
-            speak("your choice is snake! My choice is gun!")
-            speak(f"1 points created to me")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
-                
-        elif game_inp == "water" and Jarvis == "python":
-            Jarvis_p += 1
-            speak("You loose!")
-            speak("your choice is Water! My choice is snake!")
-            speak(f"1 points created to me")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
+    for chance in range(1, total_chances + 1):
+        jarvis_choice = random.choice(choices)
+        speak(f"Chance {chance}. What's your choice? Python, Water, or AK-47?")
+        user_choice = None
+        while not user_choice:
+            user_choice = take_command()
+            if user_choice not in choices:
+                speak("Invalid choice. Please say Python, Water, or AK-47.")
+                user_choice = None
 
-        elif game_inp == "ak 47" and Jarvis == "water":
-            Jarvis_p += 1
-            speak("You loose!")
-            speak("your choice is gun! My choice is water!")
-            speak(f"1 points created to me")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
-                
-        elif Jarvis == "python" and game_inp == "ak 47":
-            User_p += 1
-            speak("You Won!")
-            speak("your choice is gun! My choice is snake!")
-            speak(f"1 points created to you")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
+        print(f"Jarvis chose: {jarvis_choice}")
+        speak(f"My choice is {jarvis_choice}.")
 
-        elif Jarvis == "water" and game_inp == "python":
-            User_p += 1
-            speak("You Won!")
-            speak("your choice is snake! My choice is water!")
-            speak(f"1 points created to you")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
-                
-        elif Jarvis == "ak 47" and game_inp == "water":
-            User_p += 1
-            speak("You Won!")
-            speak("your choice is water! My choice is gun!")
-            speak(f"1 points created to you")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
-                
-        elif Jarvis == game_inp:
-            speak("Game is tied 0 Points credited to both")
-            speak(f"your choice is {game_inp}! My choice is {Jarvis}")
-            print("Updated Points......")
-            print(f"{Name} Points:- {User_p}".center(35))
-            print(f"Jarvis Points:- {Jarvis_p}".center(35))
-
+        # Game logic
+        if user_choice == jarvis_choice:
+            speak("It's a tie! No points awarded.")
+        elif (user_choice == "python" and jarvis_choice == "water") or \
+             (user_choice == "water" and jarvis_choice == "ak 47") or \
+             (user_choice == "ak 47" and jarvis_choice == "python"):
+            user_score += 1
+            speak("You won this round!")
         else:
-            speak("Do not recognize correct inputs!")
-            exit()
+            jarvis_score += 1
+            speak("You lost this round!")
 
-        print(f"{5-chances} - chances left!".rjust(35))  
-        chances += 1
+        print(f"{name}'s Score: {user_score} | Jarvis's Score: {jarvis_score}\n")
 
-    speak("The result of the game is!")
-    if User_p > Jarvis_p:
-        print("\nCONGRADULATIONS YOU WON THE GAME!")
-        speak("Congradulation! You Won the game with me!")
+    # Final Results
+    speak("The game is over. Calculating results...")
+    if user_score > jarvis_score:
+        print("CONGRATULATIONS! YOU WON THE GAME!")
+        speak("Congratulations! You are the winner!")
+    elif user_score < jarvis_score:
+        print("OOPS! YOU LOST THE GAME!")
+        speak("Oops! I won the game. Better luck next time!")
+    else:
+        print("IT'S A TIE!")
+        speak("It's a tie! Well played!")
 
-    elif User_p < Jarvis_p:
-        print("\nOOP'S YOU LOOSE THE GAME!")
-        speak("Oops's! You Loose the game with me!")
-
-    elif User_p == Jarvis_p:
-        print("\nOHH GAME IS TIED")
-        speak("Oh! Game is Tied! with me")
+    print("Thank you for playing!")
+    speak("Thank you for playing! Goodbye!")
